@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sakinah</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{sage:'#4A6B5D',paper:'#FDFBF7',gold:'#B8924A'}}}}</script>
+<style>
+body{font-family:'Nunito Sans',system-ui,sans-serif}
+.ar{font-family:'Amiri',serif;direction:rtl;line-height:2.3;font-size:1.7rem}
+.tap{touch-action:manipulation;user-select:none}
+.tab-on{background:#4A6B5D;color:#fff}
+</style>
+</head>
+<body class="bg-paper text-stone-800 dark:bg-[#14201b] dark:text-stone-200 min-h-screen">
+<header class="sticky top-0 z-10 bg-paper/95 dark:bg-[#14201b]/95 backdrop-blur border-b border-gold/40">
+  <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+    <h1 class="text-xl font-bold text-sage dark:text-emerald-200">Sakinah</h1>
+    <button id="night" class="text-sm border border-sage/40 rounded-full px-3 py-1">Mode malam</button>
+  </div>
+  <nav id="nav" class="max-w-2xl mx-auto px-4 pb-3 flex gap-2 overflow-x-auto text-sm"></nav>
+</header>
+<main id="view" class="max-w-2xl mx-auto px-4 py-6"></main>
+
+<script>
+const $=s=>document.querySelector(s);
+const API='https://equran.id/api/v2/surat/';
+const SURAHS=[{n:1,name:'Al-Fatihah',virtue:'Pembuka Al-Qur\u2019an, dibaca di setiap rakaat salat.'},{n:2,name:'Al-Baqarah',virtue:'Surat terpanjang dalam Al-Qur\u2019an, dibaca untuk perlindungan rumah.'},{n:56,name:'Al-Waqiah',virtue:'Dibaca untuk memohon kelapangan rezeki.'},{n:36,name:'Yasin',virtue:'Dikenal sebagai jantung Al-Qur\u2019an.'},{n:67,name:'Al-Mulk',virtue:'Dibaca sebelum tidur untuk perlindungan.'}];
+const RUQYAH=[
+ {title:'Pembentengan diri dan rumah',note:'Baca dengan ikhlas, tiupkan ke telapak tangan, lalu usapkan ke seluruh tubuh yang terjangkau.',items:[
+  {name:'Al-Baqarah ayat 1–5',s:2,r:[1,5],rep:1},
+  {name:'Al-Baqarah ayat 284–286',s:2,r:[284,286],rep:1},
+  {name:'Al-Fatihah',s:1,rep:1},
+  {name:'Ayat Kursi (Al-Baqarah: 255)',s:2,r:[255,255],rep:1},
+  {name:'Al-Ikhlas',s:112,rep:3},{name:'Al-Falaq',s:113,rep:3},{name:'An-Nas',s:114,rep:3}]}];
+const DZIKIR=[
+ {text:'Subhanallah',ar:'سُبْحَانَ اللَّهِ',n:33},
+ {text:'Alhamdulillah',ar:'الْحَمْدُ لِلَّهِ',n:33},
+ {text:'Allahu akbar',ar:'اللَّهُ أَكْبَرُ',n:33},
+ {text:'La ilaha illallah',ar:'لَا إِلَٰهَ إِلَّا اللَّهُ',n:100},
+ {text:'Astaghfirullahal \u2018adzim',ar:'أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ',n:100},
+ {tab:'Sholawat Jibril',text:'Shallallahu \u2018ala Muhammad',ar:'صَلَّى اللَّهُ عَلَى مُحَمَّدٍ',n:100},
+ {tab:'Sholawat Ibrahimiyah',text:'Allahumma shalli \u2018ala Muhammad wa \u2018ala ali Muhammad, kama shallaita \u2018ala Ibrahim wa \u2018ala ali Ibrahim, innaka hamidum majid. Allahumma barik \u2018ala Muhammad wa \u2018ala ali Muhammad, kama barakta \u2018ala Ibrahim wa \u2018ala ali Ibrahim, innaka hamidum majid.',ar:'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ، اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ',n:10},
+ {tab:'Sholawat Nariyah',text:'Allahumma shalli shalatan kamilatan wa sallim salaman tamman \u2018ala sayyidina Muhammadinil-ladzi tanhallu bihil-\u2018uqad, wa tanfariju bihil-kurab, wa tuqdha bihil-hawa\u2019ij, wa tunalu bihir-raghaib, wa husnul-khawatim, wa yustasqal-ghamamu biwajhihil-karim, wa \u2018ala alihi wa shahbihi fi kulli lamhatin wa nafasin bi\u2018adadi kulli ma\u2018lumin lak.',ar:'اللَّهُمَّ صَلِّ صَلَاةً كَامِلَةً وَسَلِّمْ سَلَامًا تَامًّا عَلَى سَيِّدِنَا مُحَمَّدٍ الَّذِي تَنْحَلُّ بِهِ الْعُقَدُ وَتَنْفَرِجُ بِهِ الْكُرَبُ وَتُقْضَى بِهِ الْحَوَائِجُ وَتُنَالُ بِهِ الرَّغَائِبُ وَحُسْنُ الْخَوَاتِمِ وَيُسْتَسْقَى الْغَمَامُ بِوَجْهِهِ الْكَرِيمِ وَعَلَى آلِهِ وَصَحْبِهِ فِي كُلِّ لَمْحَةٍ وَنَفَسٍ بِعَدَدِ كُلِّ مَعْلُومٍ لَكَ',n:11}];
+
+// Ambil surat dari API; simpan di localStorage agar bisa dibaca offline
+async function getSurah(n){
+  const k='sak_s'+n;
+  try{const c=localStorage.getItem(k);if(c)return JSON.parse(c)}catch(e){}
+  const r=await fetch(API+n);
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const d=(await r.json()).data;
+  try{localStorage.setItem(k,JSON.stringify(d))}catch(e){}
+  return d;
+}
+const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const verseHTML=v=>`<article class="py-5 border-b border-sage/15">
+  <div class="flex items-start gap-3"><span class="shrink-0 mt-2 text-xs text-gold border border-gold/50 rounded-full w-7 h-7 flex items-center justify-center">${v.nomorAyat}</span>
+  <p class="ar flex-1">${v.teksArab}</p></div>
+  <p class="mt-2 text-sm italic text-sage dark:text-emerald-300">${esc(v.teksLatin)}</p>
+  <p class="mt-1 text-sm">${esc(v.teksIndonesia)}</p></article>`;
+const errHTML=()=>`<p class="p-4 rounded border border-gold/50 text-sm">Surat belum bisa dimuat. Periksa koneksi internet lalu buka kembali tab ini. Setelah berhasil dimuat sekali, surat bisa dibaca tanpa internet.</p>`;
+
+const TABS={
+ surat:{label:'Surat',render:async()=>{
+  $('#view').innerHTML=`<p class="mb-4 text-sm">Pilih surat untuk dibaca lengkap.</p>`+SURAHS.map(s=>`<button data-s="${s.n}" class="w-full text-left mb-3 p-4 rounded-lg border border-sage/30 hover:border-gold"><span class="block font-bold text-sage dark:text-emerald-200">${s.name}</span><span class="text-sm">${s.virtue}</span></button>`).join('');
+  document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>openSurah(+b.dataset.s));
+ }},
+ ruqyah:{label:'Ruqyah',render:async()=>{
+  const v=$('#view');v.innerHTML='<p>Memuat...</p>';
+  try{
+   let h='';
+   for(const c of RUQYAH){
+    h+=`<h2 class="text-lg font-bold text-sage dark:text-emerald-200">${c.title}</h2><p class="text-sm mb-2">${c.note}</p>`;
+    for(const it of c.items){
+     const d=await getSurah(it.s);
+     const ay=it.r?d.ayat.filter(x=>x.nomorAyat>=it.r[0]&&x.nomorAyat<=it.r[1]):d.ayat;
+     h+=`<section class="mt-6"><h3 class="font-semibold">${it.name} <span class="text-gold text-sm">dibaca ${it.rep}x</span></h3>${ay.map(verseHTML).join('')}</section>`;
+    }
+   }
+   v.innerHTML=h;
+  }catch(e){v.innerHTML=errHTML()}
+ }},
+ dzikir:{label:'Dzikir & Sholawat',render:async()=>{
+  $('#view').innerHTML=`<div class="flex gap-2 mb-4 overflow-x-auto" id="dz"></div>
+  <div id="pad" class="tap cursor-pointer rounded-2xl border-2 border-sage/40 bg-white dark:bg-[#1b2b24] p-6 text-center min-h-[55vh] flex flex-col items-center justify-center" tabindex="0" role="button" aria-label="Ketuk untuk menambah hitungan">
+   <p id="dzAr" class="ar text-center"></p><p id="dzTx" class="text-sm mb-4"></p>
+   <p id="cnt" class="text-7xl font-bold text-sage dark:text-emerald-200">0</p><p id="tgt" class="text-gold mt-2"></p>
+   <p class="text-xs mt-6 opacity-70">Ketuk di mana saja pada kotak ini</p></div>
+  <button id="rst" class="mt-4 px-4 py-2 rounded-lg border border-sage/40">Atur ulang</button>`;
+  let i=0,c=0;
+  const draw=()=>{const d=DZIKIR[i];$('#dzAr').textContent=d.ar;$('#dzTx').textContent=d.text;$('#cnt').textContent=c;$('#tgt').textContent='Target '+d.n;
+   $('#dz').innerHTML=DZIKIR.map((x,j)=>`<button data-i="${j}" class="px-3 py-1 rounded-full border border-sage/40 text-sm whitespace-nowrap ${j===i?'tab-on':''}">${x.tab||x.text}</button>`).join('');
+   document.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{i=+b.dataset.i;c=0;draw()})};
+  const tap=()=>{c++;if(c===DZIKIR[i].n&&navigator.vibrate)navigator.vibrate([120,60,120]);else if(navigator.vibrate)navigator.vibrate(15);draw()};
+  $('#pad').onclick=tap;$('#pad').onkeydown=e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();tap()}};
+  $('#rst').onclick=()=>{c=0;draw()};draw();
+ }},
+ ai:{label:'Konsultasi (AI)',render:async()=>{
+  $('#view').innerHTML=`<details class="mb-4 border border-sage/30 rounded-lg p-3" ${localStorage.getItem('sak_key')?'':'open'}><summary class="cursor-pointer font-semibold">Kunci API Anthropic</summary>
+  <p class="text-xs my-2">Kunci hanya disimpan di browser Anda dan dikirim langsung ke Anthropic, tidak ke server lain.</p>
+  <input id="key" type="password" placeholder="sk-ant-..." class="w-full border border-sage/40 rounded p-2 bg-transparent"><button id="save" class="mt-2 px-3 py-1 rounded tab-on">Simpan kunci</button></details>
+  <div id="log" class="space-y-3 mb-4"></div>
+  <textarea id="q" rows="3" placeholder="Tulis pertanyaan Anda" class="w-full border border-sage/40 rounded p-2 bg-transparent"></textarea>
+  <button id="send" class="mt-2 px-4 py-2 rounded tab-on">Kirim</button>`;
+  $('#key').value=localStorage.getItem('sak_key')||'';
+  $('#save').onclick=()=>{localStorage.setItem('sak_key',$('#key').value.trim());$('#log').insertAdjacentHTML('beforeend','<p class="text-sm text-gold">Kunci tersimpan.</p>')};
+  const hist=[];
+  $('#send').onclick=async()=>{
+   const q=$('#q').value.trim(),key=localStorage.getItem('sak_key');
+   if(!key){$('#log').insertAdjacentHTML('beforeend','<p class="text-sm">Masukkan kunci API terlebih dahulu.</p>');return}
+   if(!q)return;
+   hist.push({role:'user',content:q});$('#q').value='';
+   $('#log').insertAdjacentHTML('beforeend',`<p class="p-3 rounded bg-sage/10 text-sm">${esc(q)}</p>`);
+   try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+     body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:'Anda adalah pendamping spiritual yang penuh kasih dan berpengetahuan, menjawab dalam bahasa Indonesia. Berikan panduan Ruqyah syar\u2019i yang lembut dan hanya merujuk pada dalil yang sahih. Jika ragu pada suatu dalil, katakan terus terang. Untuk keluhan fisik atau mental yang berat, sarankan juga menemui tenaga medis dan ustaz atau ulama yang tepercaya.',messages:hist})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error?.message||r.status);
+    const t=d.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    hist.push({role:'assistant',content:t});
+    $('#log').insertAdjacentHTML('beforeend',`<p class="p-3 rounded border border-gold/40 text-sm whitespace-pre-wrap">${esc(t)}</p>`);
+   }catch(e){hist.pop();$('#log').insertAdjacentHTML('beforeend',`<p class="text-sm">Gagal mengirim: ${esc(e.message)}. Periksa kunci API Anda.</p>`)}
+  };
+ }}
+};
+
+async function openSurah(n){
+  const v=$('#view');v.innerHTML='<p>Memuat...</p>';
+  try{
+   const d=await getSurah(n);
+   v.innerHTML=`<button id="back" class="text-sm text-sage dark:text-emerald-300 mb-3">Kembali ke daftar surat</button>
+   <h2 class="text-2xl font-bold text-sage dark:text-emerald-200">${d.namaLatin} <span class="ar text-3xl">${d.nama}</span></h2>
+   <p class="text-sm mb-2">${d.arti} \u00b7 ${d.jumlahAyat} ayat</p>${d.ayat.map(verseHTML).join('')}`;
+   $('#back').onclick=()=>show('surat');scrollTo(0,0);
+  }catch(e){v.innerHTML=errHTML()}
+}
+function show(k){
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('tab-on',b.dataset.k===k));
+  TABS[k].render();
+}
+$('#nav').innerHTML=Object.entries(TABS).map(([k,t])=>`<button data-k="${k}" class="px-4 py-1.5 rounded-full border border-sage/40 whitespace-nowrap">${t.label}</button>`).join('');
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>show(b.dataset.k));
+$('#night').onclick=()=>{const on=document.documentElement.classList.toggle('dark');try{localStorage.setItem('sak_dark',on?'1':'')}catch(e){}};
+try{if(localStorage.getItem('sak_dark'))document.documentElement.classList.add('dark')}catch(e){}
+show('surat');
+</script>
+</body>
+</html>
